@@ -1,2 +1,135 @@
 ---
-# tasks file for template
+
+- name: "Install pip3"
+  ansible.builtin.apt:
+    name: python3-pip
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: "Install passlib via pip"
+  ansible.builtin.pip:
+    name: passlib
+    state: present
+
+- name: "Install wireguard tools"
+  ansible.builtin.apt:
+    name: "{{ wireguard_ui_packages }}"
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: "Create /usr/local/share/wireguard-ui directory"
+  ansible.builtin.file:
+    path: /usr/local/share/wireguard-ui
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: "Check if wireguard-ui is installed"
+  ansible.builtin.stat:
+    path: /usr/local/bin/wireguard-ui
+  register: wg_ui
+
+- name: "Retrieve latest wireguard-ui information"
+  ansible.builtin.uri:
+    url: "{{ wireguard_ui_repo_api_url }}"
+    method: "GET"
+    return_content: yes
+    status_code: 200
+    body_format: json
+  register: wg_ui_version_info
+
+- name: "Download wireguard-ui"
+  become: true
+  ansible.builtin.get_url:
+    url : "{{ wireguard_ui_repo_url}}/releases/download/{{ wg_ui_version_info.json.tag_name }}/wireguard-ui-{{ wg_ui_version_info.json.tag_name }}-linux-amd64.tar.gz"
+    dest: "/tmp/wireguard-ui.tar.gz"
+    mode: 0755
+  when: not wg_ui.stat.exists
+
+- name: "Install wireguard-ui"
+  ansible.builtin.unarchive:
+    src: /tmp/wireguard-ui.tar.gz
+    dest: /usr/local/bin/
+    remote_src: yes
+    mode: 0755
+
+- name: "Deploy wireguard-ui config"
+  ansible.builtin.template:
+    src: wireguard-ui.j2
+    dest: /etc/default/wireguard-ui
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - Restart wireguard-ui
+
+- name: "Deploy wg-quick-watcher@.path"
+  ansible.builtin.template:
+    src: wg-quick-watcher@.path
+    dest: /etc/systemd/system/wg-quick-watcher@.path
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Deploy wg-quick-watcher@.service"
+  ansible.builtin.template:
+    src: wg-quick-watcher@.service
+    dest: /etc/systemd/system/wg-quick-watcher@.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Deploy wireguard-ui.service"
+  ansible.builtin.template:
+    src: wireguard-ui.service
+    dest: /etc/systemd/system/wireguard-ui.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Enable IPv4 forwarding"
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+  when: enable_ipv4_forwarding
+
+- name: "Enable IPv6 forwarding"
+  ansible.posix.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: '1'
+    state: present
+  when: enable_ipv6_forwarding
+
+- name: "Run systemctl daemon reload"
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: "Start wireguard-ui.service"
+  ansible.builtin.systemd:
+    state: started
+    name: wireguard-ui.service
+    enabled: yes
+
+- name: "Start wg-quick@wg0.service"
+  ansible.builtin.systemd:
+    state: started
+    name: wg-quick@wg0.service
+    enabled: yes
+
+- name: "Start wg-quick-watcher@wg0.service"
+  ansible.builtin.systemd:
+    state: started
+    name: wg-quick-watcher@wg0.service
+    enabled: yes
+
+- name: "Start wg-quick-watcher@wg0.path"
+  ansible.builtin.systemd:
+    state: started
+    name: wg-quick-watcher@wg0.path
+    enabled: yes
+
+...

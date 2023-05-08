@@ -1,2 +1,6 @@
 ---
-# handlers file for template
+
+- name: "Restart wireguard-ui"
+  ansible.builtin.systemd:
+    state: restarted
+    name: wireguard-ui.service

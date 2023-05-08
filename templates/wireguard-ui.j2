@@ -1,0 +1,83 @@
+{{ ansible_managed | comment }}
+# Default configuration for wireguard-ui.
+# This file is loaded by the wireguard-ui systemd service.
+#
+# Please note, that most of these settings have no affect after the initial start of wireguard-ui.
+# After that, wireguard-ui stores these settings in its own db and you can change them through the UI (or manually in the db) only.
+
+# Used to encrypt the session cookies. Should be a random key, 32 characters long.
+{% if wireguard_ui_config.SESSION_SECRET is defined %}
+SESSION_SECRET={{ wireguard_ui_config.SESSION_SECRET }}
+{% endif %}}
+# The login credentials for initial configuration.
+WGUI_USERNAME={{ wireguard_ui_config.WGUI_USERNAME | default('admin') }}
+{% if wireguard_ui_config.WGUI_PASSWORD is defined %}
+WGUI_PASSWORD_HASH={{ wireguard_ui_config.WGUI_PASSWORD | password_hash('bcrypt') | b64encode }}
+{% else %}
+WGUI_PASSWORD_HASH={{ wireguard_ui_config.WGUI_PASSWORD_HASH }}
+{% endif %}
+
+# The default endpoint address used in the global settings.
+{% if wireguard_ui_config.WGUI_ENDPOINT_ADDRESS is defined %}
+WGUI_ENDPOINT_ADDRESS={{ wireguard_ui_config.WGUI_ENDPOINT_ADDRESS }}
+{% endif %}
+
+# The default DNS servers (comma-separated-list) used in the global settings.
+WGUI_DNS={{ wireguard_ui_config.WGUI_DNS | default('1.1.1.1,1.0.0.1,2606:4700:4700::1111,2606:4700:4700::1001')}}
+
+# The default MTU used in the global settings.
+# Theoretically, 1420 would be sufficient for Wireguard over IPv4 or IPv6. 1412 is safer when dealing with internet access over PPPoE.
+# But because of all the broken WiFis out there that use tunnels but drop ICMP, we better leave a bit more headroom.
+WGUI_MTU={{ wireguard_ui_config.WGUI_MTU | default('1300')}}
+
+# The default persistent keepalive interval used in the global settings.
+WGUI_PERSISTENT_KEEPALIVE={{ wireguard_ui_config.WGUI_PERSISTENT_KEEPALIVE | default('15')}}
+
+# The default forward mark used in the global settings.
+WGUI_FORWARD_MARK={{ wireguard_ui_config.WGUI_FORWARD_MARK | default('0xca6c')}}
+
+# The default config file path used in the global settings.
+WGUI_CONFIG_FILE_PATH={{ wireguard_ui_config.WGUI_CONFIG_FILE_PATH | default('/etc/wireguard/wg0.conf')}}
+
+# Set this variable if you run wireguard-ui under a subpath of your reverse proxy virtual host.
+{% if wireguard_ui_config.BASE_PATH is defined %}
+BASE_PATH={{ wireguard_ui_config.BASE_PATH }}
+{% else %}
+#BASE_PATH=/wireguard
+{% endif %}
+
+# The default interface addresses (comma-separated-list) used in the WireGuard server configuration.
+WGUI_SERVER_INTERFACE_ADDRESSES={{ wireguard_ui_config.WGUI_SERVER_INTERFACE_ADDRESSES | default(ansible_default_ipv4.interface)}}{%if ansible_default_ipv6.address is defined %},{{ ansible_default_ipv6.address | regex_replace('::1$',':ac1e::1/120')}}{% endif %}
+
+# The default server listen port used in the WireGuard server configuration.
+WGUI_SERVER_LISTEN_PORT={{ wireguard_ui_config.WGUI_SERVER_LISTEN_PORT | default('51820')}}
+
+# The default post-up and post-down scripts used in the WireGuard server configuration.
+WGUI_SERVER_POST_UP_SCRIPT={{ wireguard_ui_config.WGUI_SERVER_POST_UP_SCRIPT | default('')}}
+WGUI_SERVER_POST_DOWN_SCRIPT={{ wireguard_ui_config.WGUI_SERVER_POST_DOWN_SCRIPT | default('')}}
+
+# The default comma-separated-list of CIDRs for the 'Allowed IPs' field for new clients.
+WGUI_DEFAULT_CLIENT_ALLOWED_IPS={{ wireguard_ui_config.WGUI_DEFAULT_CLIENT_ALLOWED_IPS | default('0.0.0.0/0,::/0')}}
+# The default comma-separated-list of CIDRs for the 'Extra Allowed IPs' field for new clients.
+WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS={{ wireguard_ui_config.WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS | default('')}}
+
+# The default value for the 'Use Server DNS' checkbox for new clients.
+WGUI_DEFAULT_CLIENT_USE_SERVER_DNS={{ wireguard_ui_config.WGUI_DEFAULT_CLIENT_USE_SERVER_DNS | default('true')}}
+# The default value for the 'Enable after creation' checkbox for new clients.
+WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION={{ wireguard_ui_config.WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION | default('true')}}
+# You can configure further options, like email submission here.
+# Please take a look into the wireguard-ui readme for further details: https://github.com/ngoduykhanh/wireguard-ui#email-configuration
+{% if wireguard_ui_config.SMTP is defined %}
+SMTP_HOSTNAME: {{ wireguard_ui_config.SMTP.SMTP_HOSTNAME }}
+SMTP_PORT: {{ wireguard_ui_config.SMTP.SMTP_PORT }}
+SMTP_USERNAME: {{ wireguard_ui_config.SMTP.SMTP_USERNAME }}
+SMTP_PASSWORD: {{ wireguard_ui_config.SMTP.SMTP_PASSWORD }}
+SMTP_AUTH_TYPE: {{ wireguard_ui_config.SMTP.SMTP_AUTH_TYPE }}
+EMAIL_FROM_ADDRESS: {{ wireguard_ui_config.SMTP.EMAIL_FROM_ADDRESS }}
+EMAIL_FROM_NAME: {{ wireguard_ui_config.SMTP.EMAIL_FROM_NAME }}
+{% endif %}
+{% if wireguard_ui_config.SendGrid_API is defined %}
+SENDGRID_API_KEY: {{ wireguard_ui_config.SendGrid_API.SENDGRID_API_KEY }}
+EMAIL_FROM_ADDRESS: {{ wireguard_ui_config.SendGrid_API.EMAIL_FROM_ADDRESS }}
+EMAIL_FROM_NAME: {{ wireguard_ui_config.SendGrid_API.EMAIL_FROM_NAME }}
+{% endif %}
