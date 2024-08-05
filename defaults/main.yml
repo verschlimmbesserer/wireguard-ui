@@ -1,4 +1,6 @@
 ---
+# defaults file for wireguard-ui
+
 # defaults file for template
 
 enable_ipv4_forwarding: true
@@ -14,16 +16,16 @@ wireguard_ui_packages:
   - wireguard-tools
 
 wireguard_ui_config:
-  SESSION_SECRET: "75179a37a1a0528ef431d706396579fc" #openssl rand -hex 16
+  SESSION_SECRET: "75179a37a1a0528ef431d706396579fc" # openssl rand -hex 16
   WGUI_USERNAME: admin
   WGUI_PASSWORD: "admin" # will be hashed in wireguard-ui config file with ansible
-  WGUI_ENDPOINT_ADDRESS: "" #your domain
+  WGUI_ENDPOINT_ADDRESS: "" # your domain
   WGUI_DNS: 1.1.1.1,1.0.0.1,2606:4700:4700::1111,2606:4700:4700::1001
   WGUI_MTU: 1300
   WGUI_PERSISTENT_KEEPALIVE: 15
   WGUI_FORWARD_MARK: "0xca6c"
   WGUI_CONFIG_FILE_PATH: /etc/wireguard/wg0.conf
-  WGUI_SERVER_INTERFACE_ADDRESSES: 172.32.0.1/24 #need ipv6 support will add in template
+  WGUI_SERVER_INTERFACE_ADDRESSES: 172.32.0.1/24 # need ipv6 support will add in template
   WGUI_SERVER_LISTEN_PORT: 51820
   WGUI_SERVER_POST_UP_SCRIPT: "iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ wireguard_ui_private_interface_name }} -j MASQUERADE"
   WGUI_SERVER_POST_DOWN_SCRIPT: "iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ wireguard_ui_private_interface_name }} -j MASQUERADE"

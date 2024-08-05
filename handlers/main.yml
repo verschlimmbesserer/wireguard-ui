@@ -1,4 +1,28 @@
 ---
+# handlers file for wireguard-ui
+- name: "Start wireguard-ui.service"
+  ansible.builtin.systemd:
+    state: started
+    name: wireguard-ui.service
+    enabled: true
+
+- name: "Start wg-quick@wg0.service"
+  ansible.builtin.systemd:
+    state: started
+    name: wg-quick@wg0.service
+    enabled: true
+
+- name: "Start wg-quick-watcher@wg0.service"
+  ansible.builtin.systemd:
+    state: started
+    name: wg-quick-watcher@wg0.service
+    enabled: true
+
+- name: "Start wg-quick-watcher@wg0.path"
+  ansible.builtin.systemd:
+    state: started
+    name: wg-quick-watcher@wg0.path
+    enabled: true
 
 - name: "Restart wireguard-ui"
   ansible.builtin.systemd:
